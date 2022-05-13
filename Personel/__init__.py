@@ -2,64 +2,77 @@ from typing import Any
 
 
 class Employee:
-    employee_id: int = 0
-    name: str
-    contact_number: str
-    email: str
-    health_state: bool
-    faults: list
-    complaints: list
-    gratitudes: list
-    achievements: list[str]
-    employees: list = []
+    __employee_id: int = 0
+    __name: str
+    __contact_number: str
+    __email: str
+    __health_state: bool
+    __faults: list
+    __complaints: list
+    __gratitudes: list
+    __achievements: list[str]
+    __employees: list = []
 
     def __init__(self, name: str, contact_number: str, email: str):
-        Employee.employee_id += 1
-        Employee.employees.append(self)
-        self.employee_id = Employee.employee_id
-        self.name = name
-        self.contact_number = contact_number
-        self.email = email
-        self.complaints = []
+        Employee.__employee_id += 1
+        Employee.__employees.append(self)
+        self.__employee_id = Employee.__employee_id
+        self.set_name(name)
+        self.set_contact_number(contact_number)
+        self.set_email(email)
+        self.__complaints = []
 
     # def __del__(self):
     #     print(f"{self.name} больше здесь не работает")
 
     def set_id(self, employee_id: int):
-        self.employee_id = employee_id
+        self.__employee_id = employee_id
 
     def set_contact_number(self, contact_number: str):
-        self.contact_number = contact_number
+        if type(contact_number) is not str:
+            raise ValueError("контактный телефон должен быть строкой")
+
+        self.__contact_number = contact_number
 
     def set_email(self, email: str):
-        self.email = email
+        if type(email) is not str:
+            raise ValueError("email-адрес должен быть строкой")
+
+        self.__email = email
 
     def set_name(self, name: str):
-        self.name = name
+        if type(name) is not str:
+            raise ValueError("имя должно быть строкой")
+
+        self.__name = name
 
     def add_complaint(self, complaint):
-        self.complaints.append(complaint)
+        self.__complaints.append(complaint)
 
     def get_employee_id(self):
-        return self.employee_id
+        return self.__employee_id
 
     def get_name(self):
-        return self.name
+        return self.__name
 
     def get_contact_number(self):
-        return self.contact_number
+        return self.__contact_number
 
     def get_email(self):
-        return self.email
+        return self.__email
 
     def get_complaints(self):
-        return f"Жалобы на {self.name}: {'; '.join([complaint.text for complaint in self.complaints])}"
+        return f"Жалобы на {self.__name}: {'; '.join([complaint.text for complaint in self.__complaints])}"
 
     @classmethod
     def get_employee_by_name(cls, name):
-        for employee in cls.employees:
-            if employee.name == name:
+        for employee in cls.__employees:
+            if employee.__name == name:
                 return employee
+
+    @staticmethod
+    def __print_smt(smt: str) -> None:
+        print(smt)
 
 
 class Complaint:
@@ -118,22 +131,5 @@ class DataBase(metaclass=MetaSingleton):
         print(f"Запись в БД: {self.data}")
 
 
-def main():
-    # e1 = Employee("Гольцов Максим Алеексеевич", "+7-929-371-15-68", "mag25@tpu.ru")
-    # e2 = Employee("Калякулин Семён Олегович", "+7-929-371-90-26", "sok9@tpu.ru")
-    #
-    # c1 = Complaint("Гольцов Максим Алеексеевич", "Стажер БЕЗ стажа")
-    # c1 = Complaint("Гольцов Максим Алеексеевич", "Не пофиксил багу")
-    #
-    # print(e1.get_employee_id())
-    # print(e1.get_complaints())
-
-    db1 = DataBase("user", "qwerty", 123)
-    db2 = DataBase("admin", "qwerty123", 456)
-    print(db1.user, db1.password, db1.port)
-    print(db2.user, db2.password, db2.port)
-
-
-
 if __name__ == '__main__':
-    main()
+    Employee._Employee__print_smt("abc")

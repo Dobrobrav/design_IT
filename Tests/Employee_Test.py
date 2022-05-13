@@ -21,6 +21,9 @@ class EmployeeTest(unittest.TestCase):
         c2 = Complaint("Калякулин Семён Олегович", "Мало работает")
         self.assertEqual(e1.get_complaints(), f"Жалобы на {e1.get_name()}: Плохо работает; Мало работает")
 
+    def test_wrong_name_type(self):
+        with self.assertRaises(ValueError) as e:
+            e1 = Employee(123, "+7-929-371-90-26", "sok9@tpu.ru")
 
 
 if __name__ == '__main__':
