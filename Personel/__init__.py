@@ -1,3 +1,6 @@
+from typing import Any
+
+
 class Employee:
     employee_id: int = 0
     name: str
@@ -11,9 +14,9 @@ class Employee:
     employees: list = []
 
     def __init__(self, name: str, contact_number: str, email: str):
-        self.__class__.employee_id += 1
-        self.__class__.employees.append(self)
-        self.employee_id = self.__class__.employee_id
+        Employee.employee_id += 1
+        Employee.employees.append(self)
+        self.employee_id = Employee.employee_id
         self.name = name
         self.contact_number = contact_number
         self.email = email
@@ -73,15 +76,60 @@ class Complaint:
         self.employee_id = self.employee.get_employee_id()
 
 
+class MetaSingleton(type):
+    pass
+
+
+class DataBase():
+    data: Any
+    user: str
+    password: str
+    port: int
+    __instance: 'DataBase | None' = None
+
+    def __new__(cls, *args, **kwargs):
+        if cls.__instance is None:
+            cls.__instance = super().__new__(cls)
+
+        return cls.__instance
+
+    def __del__(self):
+        DataBase.__instance = None
+
+    def __init__(self, user, password, port):
+        print(DataBase.__instance)
+        self.user = user
+        self.password = password
+        self.port = port
+
+    def connect(self):
+        pass
+
+    def close(self):
+        pass
+
+    def read(self):
+        pass
+
+    def write(self):
+        pass
+
+
 def main():
-    e1 = Employee("Гольцов Максим Алеексеевич", "+7-929-371-15-68", "mag25@tpu.ru")
-    e2 = Employee("Калякулин Семён Олегович", "+7-929-371-90-26", "sok9@tpu.ru")
+    # e1 = Employee("Гольцов Максим Алеексеевич", "+7-929-371-15-68", "mag25@tpu.ru")
+    # e2 = Employee("Калякулин Семён Олегович", "+7-929-371-90-26", "sok9@tpu.ru")
+    #
+    # c1 = Complaint("Гольцов Максим Алеексеевич", "Стажер БЕЗ стажа")
+    # c1 = Complaint("Гольцов Максим Алеексеевич", "Не пофиксил багу")
+    #
+    # print(e1.get_employee_id())
+    # print(e1.get_complaints())
 
-    c1 = Complaint("Гольцов Максим Алеексеевич", "Стажер БЕЗ стажа")
-    c1 = Complaint("Гольцов Максим Алеексеевич", "Не пофиксил багу")
+    db1 = DataBase("user", "qwerty", 123)
+    db2 = DataBase("admin", "qwerty123", 456)
+    print(db1.user, db1.password, db1.port)
+    print(db2.user, db2.password, db2.port)
 
-    print(e1.get_employee_id())
-    print(e1.get_complaints())
 
 
 if __name__ == '__main__':
