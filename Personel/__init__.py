@@ -77,42 +77,45 @@ class Complaint:
 
 
 class MetaSingleton(type):
-    pass
+    _instances = {}
+
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super(MetaSingleton, cls).__call__(*args, **kwargs)
+        return cls._instances[cls]
 
 
-class DataBase():
-    data: Any
+class DataBase(metaclass=MetaSingleton):
     user: str
     password: str
     port: int
-    __instance: 'DataBase | None' = None
-
-    def __new__(cls, *args, **kwargs):
-        if cls.__instance is None:
-            cls.__instance = super().__new__(cls)
-
-        return cls.__instance
-
-    def __del__(self):
-        DataBase.__instance = None
+    # __instance: 'DataBase | None' = None
+    #
+    # def __new__(cls, *args, **kwargs):
+    #     if cls.__instance is None:
+    #         cls.__instance = super().__new__(cls)
+    #
+    #     return cls.__instance
+    #
+    # def __del__(self):
+    #     DataBase.__instance = None
 
     def __init__(self, user, password, port):
-        print(DataBase.__instance)
         self.user = user
         self.password = password
         self.port = port
 
     def connect(self):
-        pass
+        print(f"Соединение с БД: {self.user}, {self.password}, {self.port}")
 
     def close(self):
-        pass
+        print("Закрытие соединения с БД")
 
     def read(self):
-        pass
+        print("Данные из БД")
 
-    def write(self):
-        pass
+    def write(self, data):
+        print(f"Запись в БД: {self.data}")
 
 
 def main():
