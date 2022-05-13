@@ -50,7 +50,7 @@ class Employee:
         return self.email
 
     def get_complaints(self):
-        return f"Жалобы на {self.name}: {';'.join([complaint.text for complaint in self.complaints])}"
+        return f"Жалобы на {self.name}: {'; '.join([complaint.text for complaint in self.complaints])}"
 
     @classmethod
     def get_employee_by_name(cls, name):
@@ -78,6 +78,7 @@ def main():
     e2 = Employee("Калякулин Семён Олегович", "+7-929-371-90-26", "sok9@tpu.ru")
 
     c1 = Complaint("Гольцов Максим Алеексеевич", "Стажер БЕЗ стажа")
+    c1 = Complaint("Гольцов Максим Алеексеевич", "Не пофиксил багу")
 
     print(e1.get_employee_id())
     print(e1.get_complaints())
