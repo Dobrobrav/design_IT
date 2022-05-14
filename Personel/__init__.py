@@ -1,18 +1,26 @@
 from typing import Any
+from abc import ABC, abstractmethod
 
 
 def main():
-    p1 = Product("Яблоко")
+    print(Product.__dict__)
+    p1 = Product("apple")
     print(p1.__dict__)
 
 
 class Product:
+    """Класс для работы с продуктами"""
     __name: str
     __quantity: int
+    __price: int | None
+    __productAPI: 'ProductAPI'
 
-    def __init__(self, name: str, quantity: int = 0):
+    def __init__(self, name: str, quantity: int = 0, price: float | int = None):
         self.__set_name(name)
         self.__set_quantity(quantity)
+        self.__set_price(price)
+        self.__productAPI = ProductAPI()
+        ProductAPI.add_product(self)
 
     def __set_name(self, name: str) -> None:
         self.__name = name
@@ -25,6 +33,34 @@ class Product:
 
     def __get_quantity(self) -> int:
         return self.__quantity
+
+    def __set_price(self, price: int | float) -> None:
+        if type(price) in (int, float):
+            self.__price = int(price * 100)
+
+    def __get_price(self) -> float:
+        return self.__price // 100
+
+
+class ProductAPI(ABC):
+    """Медиатор для связывания продуктов, поставщиков и покупок"""
+    __products: list[Product]
+    __suppliers: list['Supplier']
+    __purchases: list['Purchase']
+
+    def __init__(self): # Надо создать три дочерних класса и в каждом из них в ините прописать то, что нужно
+        self.__products = []
+        self.__suppliers = []
+        self.__purchases = []
+
+    def add_product(self, product: Product) -> None:
+        self.__products.append(product)
+
+    def add_supplier(self, supplier: str) -> None:
+        self.__suppliers.append(supplier)
+
+    def add_purchase(self, purchase: 'Purchase') -> None:
+        self.__purchases.append(purchase)
 
 
 class Employee:
@@ -116,7 +152,7 @@ class Complaint:
 
 
 class MetaSingleton(type):
-    _instances = {}
+    _instances: dict[type, Any] = {}
 
     def __call__(cls, *args, **kwargs):
         if cls not in cls._instances:
