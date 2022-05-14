@@ -1,6 +1,32 @@
 from typing import Any
 
 
+def main():
+    p1 = Product("Яблоко")
+    print(p1.__dict__)
+
+
+class Product:
+    __name: str
+    __quantity: int
+
+    def __init__(self, name: str, quantity: int = 0):
+        self.__set_name(name)
+        self.__set_quantity(quantity)
+
+    def __set_name(self, name: str) -> None:
+        self.__name = name
+
+    def __get_name(self) -> str:
+        return self.__name
+
+    def __set_quantity(self, quantity: int) -> None:
+        self.__quantity = quantity
+
+    def __get_quantity(self) -> int:
+        return self.__quantity
+
+
 class Employee:
     __employee_id: int = 0
     __name: str
@@ -102,6 +128,7 @@ class DataBase(metaclass=MetaSingleton):
     user: str
     password: str
     port: int
+
     # __instance: 'DataBase | None' = None
     #
     # def __new__(cls, *args, **kwargs):
@@ -128,8 +155,8 @@ class DataBase(metaclass=MetaSingleton):
         print("Данные из БД")
 
     def write(self, data):
-        print(f"Запись в БД: {self.data}")
+        print(f"Запись в БД: {data}")
 
 
 if __name__ == '__main__':
-    Employee._Employee__print_smt("abc")
+    main()
