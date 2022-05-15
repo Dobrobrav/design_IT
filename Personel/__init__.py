@@ -4,18 +4,20 @@ from abc import ABC, abstractmethod
 
 def main():
     m1 = ProductAPI()
-    apple = Product(m1, "apple")
-    pineapple = Product(m1, "pineapple")
 
-    s1 = Supplier(m1, "supplier_name")
-    s2 = Supplier(m1, "supplier_name")
-    s3 = Supplier(m1, "supplier_name")
+    apple = Product(m1, 'apple', 503)
+    pineapple = Product(m1, 'pineapple', 23)
+    banana = Product(m1, 'banana', 115)
 
-    s1.set_price(apple, 500.25)
-    s2.set_price(apple, 334.75)
-    s3.set_price(apple, 450)
+    google = Supplier(m1, "google")
+    yandex = Supplier(m1, "yandex")
+    amazon = Supplier(m1, "amazon")
 
-    print(m1.get_prices(apple))
+    purchase1 = Purchase(m1, 345)
+    purchase1.add_product(apple, 5)
+    purchase1.add_product(pineapple, 3)
+
+    print(purchase1.get_total())
 
 
 class Product:
@@ -23,16 +25,20 @@ class Product:
     __id: int = 0
     __name: str
     __quantity: int
-    __price: int
+    __price: int | None = None
     __mediator: 'ProductAPI'
 
-    def __init__(self, mediator: 'ProductAPI', name: str, quantity: int = 0):
+    def __init__(self, mediator: 'ProductAPI', name: str, price: float, quantity: int = 0):
         Product.__id += 1
         self.id = Product.__id
         self.set_name(name)
         self.set_quantity(quantity)
         self.__mediator = mediator
+        self.set_price(price)
         mediator.add_product(self)
+
+    def __str__(self) -> str:
+        return f"Product: '{self.get_name()}'"
 
     def set_name(self, name: str) -> None:
         self.__name = name
@@ -69,6 +75,9 @@ class Supplier:
         self.__mediator = mediator
         mediator.add_supplier(self)
 
+    def __str__(self) -> str:
+        return f"Supplier: '{self.get_name()}'"
+
     def set_name(self, name: str) -> None:
         self.__name = name
 
@@ -83,21 +92,40 @@ class Supplier:
 
 
 class Purchase:
-    """Класс для работы с поставщиками"""
+    """Класс для работы с покупками"""
     __id: int = 0
     __number: int
     __products_quantity: dict[Product, int]
     __mediator: 'ProductAPI'
 
-    def __init__(self, number: int, mediator: 'ProductAPI'):
+    def __init__(self, mediator: 'ProductAPI', number: int):
         Purchase.__id += 1
         self.__id = Purchase.__id
         self.set_number(number)
+        self.__products_quantity = {}
         self.__mediator = mediator
         mediator.add_purchase(self)
 
+    def __str__(self) -> str:
+        return f"Purchase number: '{self.get_number()}'"
+
     def set_number(self, number: int) -> None:
         self.__number = number
+
+    def get_number(self) -> int:
+        return self.__number
+
+    def add_product(self, product: Product, quantity: int = 1) -> None:
+        for _ in range(quantity):
+            if product in self.__products_quantity:
+                self.__products_quantity[product] += 1
+            else:
+                self.__products_quantity[product] = 1
+
+    def get_total(self) -> float:
+        return sum(product.get_price() * quantity for product, quantity in self.__products_quantity.items())
+
+
 
 
 class ProductAPI:
