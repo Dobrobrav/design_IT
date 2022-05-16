@@ -14,10 +14,15 @@ def main():
     amazon = Supplier(m1, "amazon")
 
     purchase1 = Purchase(m1, 345)
+    purchase2 = Purchase(m1, 658)
+    purchase3 = Purchase(m1, 234)
     purchase1.add_product(apple, 5)
+    purchase2.add_product(apple, 6)
+    purchase3.add_product(pineapple, 2)
     purchase1.add_product(pineapple, 3)
+    purchase1.add_product(banana, 100)
 
-    print(purchase1.get_total())
+    print(*m1.get_purchases_with_product(apple), sep=", ")
 
 
 class Product:
@@ -115,6 +120,9 @@ class Purchase:
     def get_number(self) -> int:
         return self.__number
 
+    def get_products_quantity(self) -> dict[Product, int]:
+        return self.__products_quantity
+
     def add_product(self, product: Product, quantity: int = 1) -> None:
         for _ in range(quantity):
             if product in self.__products_quantity:
@@ -124,8 +132,6 @@ class Purchase:
 
     def get_total(self) -> float:
         return sum(product.get_price() * quantity for product, quantity in self.__products_quantity.items())
-
-
 
 
 class ProductAPI:
@@ -160,48 +166,8 @@ class ProductAPI:
     def get_prices(self, product: Product) -> tuple[float, ...]:
         return tuple(supplier.get_price(product) for supplier in self.__suppliers if supplier.get_price(product))
 
-
-class SupplierAPI:
-    """Медиатор для связывания продуктов, поставщиков и покупок"""
-    __products: list[Product]
-    # __suppliers: list['Supplier']
-    __purchases: list['Purchase']
-
-    def __init__(self):  # Надо создать три дочерних класса и в каждом из них в ините прописать то, что нужно
-        self.__products = []
-        # self.__suppliers = []
-        self.__purchases = []
-
-    def add_product(self, product: Product) -> None:
-        self.__products.append(product)
-
-    # def add_supplier(self, supplier: str) -> None:
-    #     self.__suppliers.append(supplier)
-
-    def add_purchase(self, purchase: 'Purchase') -> None:
-        self.__purchases.append(purchase)
-
-
-class PurchaseAPI:
-    """Медиатор для связывания продуктов, поставщиков и покупок"""
-    __products: list[Product]
-    __suppliers: list['Supplier']
-
-    # __purchases: list['Purchase']
-
-    def __init__(self):  # Надо создать три дочерних класса и в каждом из них в ините прописать то, что нужно
-        self.__products = []
-        # self.__suppliers = []
-        self.__purchases = []
-
-    def add_product(self, product: Product) -> None:
-        self.__products.append(product)
-
-    def add_supplier(self, supplier: str) -> None:
-        self.__suppliers.append(supplier)
-
-    # def add_purchase(self, purchase: 'Purchase') -> None:
-    #     self.__purchases.append(purchase)
+    def get_purchases_with_product(self, product: Product) -> tuple[Purchase, ...]:
+        return tuple(purchase for purchase in self.get_purchases() if product in purchase.get_products_quantity())
 
 
 class Employee:
