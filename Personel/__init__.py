@@ -9,41 +9,50 @@ def main():
     pineapple = Product(m1, 'pineapple', 23)
     banana = Product(m1, 'banana', 115)
 
-    google = Supplier(m1, "google")
-    yandex = Supplier(m1, "yandex")
-    amazon = Supplier(m1, "amazon")
 
-    purchase1 = Purchase(m1, 345)
-    purchase2 = Purchase(m1, 658)
-    purchase3 = Purchase(m1, 234)
-    purchase1.add_product(apple, 5)
-    purchase2.add_product(apple, 6)
-    purchase3.add_product(pineapple, 2)
-    purchase1.add_product(pineapple, 3)
-    purchase1.add_product(banana, 100)
 
-    print(*m1.get_purchases_with_product(apple), sep=", ")
+    # google = Supplier(m1, "google")
+    # yandex = Supplier(m1, "yandex")
+    # amazon = Supplier(m1, "amazon")
+    #
+    # purchase1 = Purchase(m1, 345)
+    # purchase2 = Purchase(m1, 658)
+    # purchase3 = Purchase(m1, 234)
+    # purchase1.add_product(apple, 5)
+    # purchase2.add_product(apple, 6)
+    # purchase3.add_product(pineapple, 2)
+    # purchase1.add_product(pineapple, 3)
+    # purchase1.add_product(banana, 100)
+    #
+    # print(*m1.get_purchases_with_product(apple), sep=", ")
 
 
 class Product:
     """Класс для работы с продуктами"""
-    __id: int = 0
+    __id: list['Product'] = []
     __name: str
     __quantity: int
     __price: int | None = None
     __mediator: 'ProductAPI'
 
     def __init__(self, mediator: 'ProductAPI', name: str, price: float, quantity: int = 0):
-        Product.__id += 1
-        self.id = Product.__id
+        self.__class__.__id.append(self)
         self.set_name(name)
         self.set_quantity(quantity)
         self.__mediator = mediator
         self.set_price(price)
         mediator.add_product(self)
 
+    def __del__(self):
+        print(Product.__id)
+        self.__class__.__id.remove(self)
+        print(Product.__id)
+
     def __str__(self) -> str:
         return f"Product: '{self.get_name()}'"
+
+    def get_id(self) -> int:
+        return self.__class__.__id.index(self) + 1
 
     def set_name(self, name: str) -> None:
         self.__name = name
