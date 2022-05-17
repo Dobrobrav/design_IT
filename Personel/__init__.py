@@ -9,8 +9,6 @@ def main():
     pineapple = Product(m1, 'pineapple', 23)
     banana = Product(m1, 'banana', 115)
 
-
-
     # google = Supplier(m1, "google")
     # yandex = Supplier(m1, "yandex")
     # amazon = Supplier(m1, "amazon")
