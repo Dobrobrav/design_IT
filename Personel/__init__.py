@@ -171,6 +171,7 @@ class ProductAPI:
 
 
 class Employee:
+    """Класс для работы с работниками магазина"""
     __id: int = 0
     __name: str
     __contact_number: str
@@ -245,6 +246,7 @@ class Employee:
 
 
 class Complaint:
+    """Класс для работы с жалобами"""
     employee_id: int
     employee_name: str
     employee: Employee
@@ -259,6 +261,7 @@ class Complaint:
 
 
 class MetaSingleton(type):
+    """Метакласс для реализации singleton"""
     _instances: dict['MetaSingleton', Any] = {}
 
     def __call__(cls, *args, **kwargs):
@@ -269,6 +272,7 @@ class MetaSingleton(type):
 
 
 class DataBase(metaclass=MetaSingleton):
+    """Класс для коннекта с БД"""
     user: str
     password: str
     port: int
