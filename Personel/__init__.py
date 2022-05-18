@@ -1,28 +1,22 @@
 from typing import Any
 from abc import ABC, abstractmethod
+from datetime import datetime
+from enum import Enum
 
 
 def main():
     m1 = ProductAPI()
 
-    apple = Product(m1, 'apple', 503)
-    pineapple = Product(m1, 'pineapple', 23)
-    banana = Product(m1, 'banana', 115)
+    e1 = Employee("Гольцов")
+    complaint1 = create_feedback(FeedbackType.complaint, "Гольцов", "Стажер без стажа", "Петров")
+    print(complaint1.__dict__)
 
-    # google = Supplier(m1, "google")
-    # yandex = Supplier(m1, "yandex")
-    # amazon = Supplier(m1, "amazon")
-    #
-    # purchase1 = Purchase(m1, 345)
-    # purchase2 = Purchase(m1, 658)
-    # purchase3 = Purchase(m1, 234)
-    # purchase1.add_product(apple, 5)
-    # purchase2.add_product(apple, 6)
-    # purchase3.add_product(pineapple, 2)
-    # purchase1.add_product(pineapple, 3)
-    # purchase1.add_product(banana, 100)
-    #
-    # print(*m1.get_purchases_with_product(apple), sep=", ")
+
+class FeedbackType(Enum):
+    complaint = 1
+    gratitude = 2
+    comment = 3
+    suggestion = 4
 
 
 class Product:
@@ -190,7 +184,7 @@ class Employee:
     __achievements: list[str]
     __employees: list = []
 
-    def __init__(self, name: str, contact_number: str, email: str):
+    def __init__(self, name: str, contact_number: str = "some_number", email: str = "some_email"):
         Employee.__id += 1
         Employee.__employees.append(self)
         self.__id = Employee.__id
@@ -198,6 +192,9 @@ class Employee:
         self.set_contact_number(contact_number)
         self.set_email(email)
         self.__complaints = []
+
+    def __str__(self):
+        return f"Работник: {self.get_name()}"
 
     # def __del__(self):
     #     print(f"{self.name} больше здесь не работает")
@@ -244,7 +241,9 @@ class Employee:
     @classmethod
     def get_employee_by_name(cls, name):
         for employee in cls.__employees:
-            if employee.__name == name:
+            # print(f"{employee.get_name()}, {name}")
+            if employee.get_name() == name:
+                # print("found employee")
                 return employee
 
     @staticmethod
@@ -252,19 +251,86 @@ class Employee:
         print(smt)
 
 
-class Complaint:
-    """Класс для работы с жалобами"""
-    employee_id: int
-    employee_name: str
-    employee: Employee
+class FeedBack(ABC):
+    """Абстрактный класс для работы с фидбеком"""
+    date_and_time: datetime
+    customer_name: str
+    contact_details: str
     text: str
 
-    def __init__(self, name: str, text: str):
-        self.employee_name = name
+    def __init__(self, text: str, customer_name: str, contact_details: str):
+        self.date_and_time = datetime.now()
+        self.customer_name = customer_name
+        self.contact_details = contact_details
         self.text = text
-        self.employee = Employee.get_employee_by_name(name)
+
+
+class FeedbackToEmployee(FeedBack):
+    """Класс для работы с жалобами"""
+    employee_id: int
+    employee_name: str  # Надо ли это хранить (думаю, что нет)
+    employee: Employee
+
+    def __init__(self, employee_name: str, text: str, customer_name: str, contact_details: str):
+        super().__init__(text, customer_name, contact_details)
+        self.employee_name = employee_name
+        self.employee = Employee.get_employee_by_name(employee_name)
         self.employee.add_complaint(self)
         self.employee_id = self.employee.get_employee_id()
+
+
+class Gratitude(FeedbackToEmployee):
+    """Класс для работы с благодарностями от посетителей."""
+    def __init__(self, employee_name: str, text: str, customer_name: str, contact_details: str):
+        super().__init__(employee_name, text, customer_name, contact_details)
+        self.set_employee_name(employee_name)
+
+    def __str__(self):
+        return f"Благодарность от {self.customer_name} для {self.employee_name}"
+
+    def set_employee_name(self, employee_name: str) -> None:
+        self.employee_name = employee_name
+
+
+class Complaint(FeedbackToEmployee):
+    """Класс для работы с благодарностями от посетителей."""
+    def __init__(self, employee_name: str, text: str, customer_name: str, contact_details: str = "some_contact"):
+        super().__init__(employee_name, text, customer_name, contact_details)
+        self.set_employee_name(employee_name)
+
+    def __str__(self):
+        return f"Жалоба от {self.customer_name} на {self.employee_name}"
+
+    def set_employee_name(self, employee_name: str) -> None:
+        self.employee_name = employee_name
+
+
+class Comment(FeedBack):
+    """Класс для работы с жалобами"""
+
+    def __init__(self, text: str, customer_name: str,
+                 contact_details: str = "some_contact"):
+        super().__init__(text, customer_name, contact_details)
+
+
+class Suggestion(FeedBack):
+    """Класс для работы с жалобами"""
+
+    def __init__(self, text: str, customer_name: str,
+                 contact_details: str = "some_contact"):
+        super().__init__(text, customer_name, contact_details)
+
+
+def create_feedback(feedback_type: FeedbackType, *args) -> FeedBack:
+    """Фабричный метод для создания экземпляра класса Feedback."""
+
+    factory_dict = {
+        FeedbackType.complaint: Complaint,
+        FeedbackType.gratitude: Gratitude,
+        FeedbackType.suggestion: Suggestion,
+        FeedbackType.comment: Comment,
+    }
+    return factory_dict[feedback_type](*args)
 
 
 class MetaSingleton(type):
