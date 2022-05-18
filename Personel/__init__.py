@@ -1,15 +1,15 @@
 from typing import Any
-from abc import ABC, abstractmethod
+from abc import ABC
 from datetime import datetime
 from enum import Enum
 
 
 def main():
-    m1 = ProductAPI()
+    db = DataBase()
 
     e1 = Employee("Гольцов")
-    complaint1 = create_feedback(FeedbackType.complaint, "Гольцов", "Стажер без стажа", "Петров")
-    print(complaint1.__dict__)
+    f1 = create_feedback(FeedbackType.complaint, "Гольцов", "Стажер без стажа", "Петров")
+    print(f1.__dict__)
 
 
 class FeedbackType(Enum):
@@ -322,7 +322,7 @@ class Suggestion(FeedBack):
 
 
 def create_feedback(feedback_type: FeedbackType, *args) -> FeedBack:
-    """Фабричный метод для создания экземпляра класса Feedback."""
+    """Фабричный метод для создания экземпляров класса Feedback."""
 
     factory_dict = {
         FeedbackType.complaint: Complaint,
@@ -338,6 +338,7 @@ class MetaSingleton(type):
     _instances: dict['MetaSingleton', Any] = {}
 
     def __call__(cls, *args, **kwargs):
+        print(cls)
         if cls not in cls._instances:
             cls._instances[cls] = super(MetaSingleton, cls).__call__(*args, **kwargs)
 
