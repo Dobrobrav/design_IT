@@ -17,8 +17,8 @@ class EmployeeTest(unittest.TestCase):
 
     def test_get_complaints(self):
         e1 = Employee("Калякулин Семён Олегович", "+7-929-371-90-26", "sok9@tpu.ru")
-        c1 = Complaint("Калякулин Семён Олегович", "Плохо работает")
-        c2 = Complaint("Калякулин Семён Олегович", "Мало работает")
+        c1 = Complaint("Калякулин Семён Олегович", "Плохо работает", "some_customer")
+        c2 = Complaint("Калякулин Семён Олегович", "Мало работает", "some_customer")
         self.assertEqual(e1.get_complaints(), f"Жалобы на {e1.get_name()}: Плохо работает; Мало работает")
 
     def test_wrong_name_type(self):

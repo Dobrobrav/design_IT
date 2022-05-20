@@ -1,15 +1,24 @@
 from typing import Any
-from abc import ABC
+from abc import ABC, abstractmethod
 from datetime import datetime
 from enum import Enum
 
 
 def main():
-    db = DataBase()
+    employee_1 = Employee("Гольцов")
+    employee_2 = Employee("Калякулин")
 
-    e1 = Employee("Гольцов")
-    f1 = create_feedback(FeedbackType.complaint, "Гольцов", "Стажер без стажа", "Петров")
-    print(f1.__dict__)
+    gf = GratitudeFactory()
+    cf = ComplaintFactory()
+
+    anon_gratitude = gf.create_anonym_feedback("Гольцов", "Благодарность")
+    named_gratitude = gf.create_named_feedback("Калякулин", "благодарность", "Николаев", "some_email")
+
+    anon_complaint = cf.create_anonym_feedback("Гольцов", "Жалоба")
+    named_complaint = gf.create_named_feedback("Калякулин", "Жалоба", "Никифоров", "some_email")
+
+    for feedback in (anon_gratitude, named_gratitude, anon_complaint, named_complaint):
+        print(feedback)
 
 
 class FeedbackType(Enum):
@@ -132,7 +141,8 @@ class Purchase:
                 self.__products_quantity[product] = 1
 
     def get_total(self) -> float:
-        return sum(product.get_price() * quantity for product, quantity in self.__products_quantity.items())
+        return sum(product.get_price() * quantity
+                   for product, quantity in self.__products_quantity.items())
 
 
 class ProductAPI:
@@ -265,7 +275,7 @@ class FeedBack(ABC):
         self.text = text
 
 
-class FeedbackToEmployee(FeedBack):
+class FeedbackToEmployee(FeedBack, ABC):
     """Класс для работы с жалобами"""
     employee_id: int
     employee_name: str  # Надо ли это хранить (думаю, что нет)
@@ -281,6 +291,7 @@ class FeedbackToEmployee(FeedBack):
 
 class Gratitude(FeedbackToEmployee):
     """Класс для работы с благодарностями от посетителей."""
+
     def __init__(self, employee_name: str, text: str, customer_name: str, contact_details: str):
         super().__init__(employee_name, text, customer_name, contact_details)
         self.set_employee_name(employee_name)
@@ -294,6 +305,7 @@ class Gratitude(FeedbackToEmployee):
 
 class Complaint(FeedbackToEmployee):
     """Класс для работы с благодарностями от посетителей."""
+
     def __init__(self, employee_name: str, text: str, customer_name: str, contact_details: str = "some_contact"):
         super().__init__(employee_name, text, customer_name, contact_details)
         self.set_employee_name(employee_name)
@@ -321,16 +333,51 @@ class Suggestion(FeedBack):
         super().__init__(text, customer_name, contact_details)
 
 
-def create_feedback(feedback_type: FeedbackType, *args) -> FeedBack:
-    """Фабричный метод для создания экземпляров класса Feedback."""
+class FeedbackToEmployeeFactory(ABC):
+    """Абстрактная фабрика фидбеков."""
 
-    factory_dict = {
-        FeedbackType.complaint: Complaint,
-        FeedbackType.gratitude: Gratitude,
-        FeedbackType.suggestion: Suggestion,
-        FeedbackType.comment: Comment,
-    }
-    return factory_dict[feedback_type](*args)
+    @abstractmethod
+    def create_anonym_feedback(self, employee_name: str, text: str) -> FeedBack:
+        pass
+
+    @abstractmethod
+    def create_named_feedback(self, employee_name: str, text: str, customer_name: str,
+                              contact_details: str) -> FeedBack:
+        pass
+
+    @staticmethod
+    def create_feedback(feedback_type: FeedbackType, *args) -> FeedBack:
+        """Фабричный метод для создания экземпляров класса Feedback."""
+
+        factory_dict = {
+            FeedbackType.complaint: Complaint,
+            FeedbackType.gratitude: Gratitude,
+            FeedbackType.suggestion: Suggestion,
+            FeedbackType.comment: Comment,
+        }
+        return factory_dict[feedback_type](*args)
+
+
+class GratitudeFactory(FeedbackToEmployeeFactory):
+    """Фабрика отзывов и предложений"""
+
+    def create_anonym_feedback(self, employee_name: str, text: str) -> FeedBack:
+        return self.create_feedback(FeedbackType.gratitude, employee_name, text, "Anonym", "Anonym")
+
+    def create_named_feedback(self, employee_name: str, text: str, customer_name: str,
+                              contact_details: str) -> FeedBack:
+        return self.create_feedback(FeedbackType.gratitude, employee_name, text, customer_name, contact_details)
+
+
+class ComplaintFactory(FeedbackToEmployeeFactory):
+    """Фабрика жалоб и благодарностей"""
+
+    def create_anonym_feedback(self, employee_name: str, text: str) -> FeedBack:
+        return self.create_feedback(FeedbackType.complaint, employee_name, text, "Anonym", "Anonym")
+
+    def create_named_feedback(self, employee_name: str, text: str, customer_name: str,
+                              contact_details: str) -> FeedBack:
+        return self.create_feedback(FeedbackType.complaint, employee_name, text, customer_name, contact_details)
 
 
 class MetaSingleton(type):
@@ -350,17 +397,6 @@ class DataBase(metaclass=MetaSingleton):
     user: str
     password: str
     port: int
-
-    # __instance: 'DataBase | None' = None
-    #
-    # def __new__(cls, *args, **kwargs):
-    #     if cls.__instance is None:
-    #         cls.__instance = super().__new__(cls)
-    #
-    #     return cls.__instance
-    #
-    # def __del__(self):
-    #     DataBase.__instance = None
 
     def __init__(self, user: str = "default_user", password: str = "default_password", port: int = "default_port"):
         self.user = user
