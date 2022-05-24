@@ -23,7 +23,7 @@ class EmployeeTest(unittest.TestCase):
 
     def test_wrong_name_type(self):
         with self.assertRaises(ValueError) as e:
-            e1 = Employee("name", "+7-929-371-90-26", "sok9@tpu.ru")
+            e1 = Employee(123, "+7-929-371-90-26", "sok9@tpu.ru")
 
 
 if __name__ == '__main__':

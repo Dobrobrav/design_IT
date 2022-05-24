@@ -1,18 +1,33 @@
-from typing import Any, Type
+from typing import Any, Type, Iterable
 from abc import ABC, abstractmethod, abstractclassmethod
 from datetime import datetime
 from enum import Enum
 
 
 def main():
-    maxim = Employee("Гольцов")
-    complaint = FeedbackToEmployeeFactory.create_feedback(FeedbackType.complaint, "Гольцов", "плохо работает",
-                                                          "some_customer", "some_email")
+    m1 = ProductAPI()
+    charger = ProxyProduct(m1, "Charger", 10)
 
-    print(complaint.is_read())
-    complaint.read()
-    print(complaint.is_read())
-    complaint.read()
+    samsung = Supplier(m1, "Samsung")
+    LG = Supplier(m1, "LG")
+    apple = Supplier(m1, "Apple")
+    xiaomi = Supplier(m1, "Xiaomi")
+
+    for supplier, price in zip((samsung, LG, apple, xiaomi), (13.6, 11.9, 19.99, 3.99)):
+        supplier.set_price(charger, price)
+
+    print(m1.get_prices(charger))
+
+    m1.set_strategy(PricesWithSellersStrategy)
+    print(m1.get_prices(charger))
+
+    # maxim = Employee("Гольцов")
+    # complaint = ComplaintFactory().create_anonym_feedback("Гольцов", "плохо работает")
+    #
+    # print(complaint.is_read())
+    # complaint.read()
+    # print(complaint.is_read())
+    # complaint.read()
 
 
 class FeedbackType(Enum):
@@ -20,6 +35,58 @@ class FeedbackType(Enum):
     gratitude = 2
     comment = 3
     suggestion = 4
+
+
+class PricesShowingStrategy(ABC):
+    """ Showing prices strategy interface """
+
+    @staticmethod
+    @abstractmethod
+    def get_prices(mediator: 'ProductAPI', proxy_product: 'ProxyProduct') -> tuple[str, ...]:
+        ...
+
+
+class PricesWithSellersStrategy(PricesShowingStrategy):
+    """ class of showing prices with the sellers strategy """
+
+    @staticmethod
+    def get_prices(mediator: 'ProductAPI', proxy_product: 'ProxyProduct') -> tuple[str, ...]:
+        return tuple(f"{supplier.get_name()}: {supplier.get_price(proxy_product)}$"
+                     for supplier in mediator.get_suppliers() if supplier.get_price(proxy_product))
+
+
+class PricesOnlyStrategy(PricesShowingStrategy):
+    """ class of only showing prices strategy """
+
+    @staticmethod
+    def get_prices(mediator: 'ProductAPI', proxy_product: 'ProxyProduct') -> tuple[str, ...]:
+        return tuple(f"{supplier.get_price(proxy_product)}$"
+                     for supplier in mediator.get_suppliers() if supplier.get_price(proxy_product))
+
+
+# class SortingStrategy(ABC):
+#     """ Sorting strategy interface """
+#
+#     @staticmethod
+#     @abstractmethod
+#     def sort(sequence: Iterable) -> list:
+#         ...
+#
+#
+# class AscendingSorting(SortingStrategy):
+#     """ Ascending sorting strategy"""
+#
+#     @staticmethod
+#     def sort(sequence: Iterable) -> list:
+#         return sorted(sequence)
+#
+#
+# class DescengingSorting(SortingStrategy):
+#     """ Descending sorting strategy """
+#
+#     @staticmethod
+#     def sort(sequence: Iterable) -> list:
+#         return sorted(sequence, reverse=True)
 
 
 class IProduct(ABC):
@@ -212,6 +279,7 @@ class ProductAPI:
     __suppliers: list[Supplier]
     __purchases: list[Purchase]
     __products: list[ProxyProduct]
+    _strategy: Type[PricesShowingStrategy] = PricesOnlyStrategy
 
     def __init__(self):
         self.__products = []
@@ -236,9 +304,11 @@ class ProductAPI:
     def get_purchases(self) -> tuple[Purchase]:
         return tuple(self.__purchases)
 
-    def get_prices(self, proxy_product: ProxyProduct) -> tuple[float, ...]:
-        return tuple(supplier.get_price(proxy_product)
-                     for supplier in self.__suppliers if supplier.get_price(proxy_product))
+    def set_strategy(self, strategy: Type[PricesShowingStrategy]):
+        self._strategy = strategy
+
+    def get_prices(self, proxy_product: ProxyProduct) -> tuple[str, ...]:
+        return self._strategy.get_prices(self, proxy_product)
 
     def get_purchases_with_product(self, product: Product) -> tuple[Purchase, ...]:
         return tuple(purchase for purchase in self.get_purchases() if product in purchase.get_products_quantity())
