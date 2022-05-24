@@ -1,24 +1,18 @@
-from typing import Any
-from abc import ABC, abstractmethod
+from typing import Any, Type
+from abc import ABC, abstractmethod, abstractclassmethod
 from datetime import datetime
 from enum import Enum
 
 
 def main():
-    employee_1 = Employee("Гольцов")
-    employee_2 = Employee("Калякулин")
+    maxim = Employee("Гольцов")
+    complaint = FeedbackToEmployeeFactory.create_feedback(FeedbackType.complaint, "Гольцов", "плохо работает",
+                                                          "some_customer", "some_email")
 
-    gf = GratitudeFactory()
-    cf = ComplaintFactory()
-
-    anon_gratitude = gf.create_anonym_feedback("Гольцов", "Благодарность")
-    named_gratitude = gf.create_named_feedback("Калякулин", "благодарность", "Николаев", "some_email")
-
-    anon_complaint = cf.create_anonym_feedback("Гольцов", "Жалоба")
-    named_complaint = gf.create_named_feedback("Калякулин", "Жалоба", "Никифоров", "some_email")
-
-    for feedback in (anon_gratitude, named_gratitude, anon_complaint, named_complaint):
-        print(feedback)
+    print(complaint.is_read())
+    complaint.read()
+    print(complaint.is_read())
+    complaint.read()
 
 
 class FeedbackType(Enum):
@@ -28,7 +22,39 @@ class FeedbackType(Enum):
     suggestion = 4
 
 
-class Product:
+class IProduct(ABC):
+    """Interface for proxy"""
+
+    @abstractmethod
+    def get_id(self) -> int:
+        """Interface method."""
+
+    @abstractmethod
+    def set_name(self, name: str) -> None:
+        """Interface method."""
+
+    @abstractmethod
+    def get_name(self) -> str:
+        """Interface method."""
+
+    @abstractmethod
+    def set_quantity(self, quantity: int) -> None:
+        """Interface method."""
+
+    @abstractmethod
+    def get_quantity(self) -> int:
+        """Interface method."""
+
+    @abstractmethod
+    def set_price(self, price: int | float) -> None:
+        """Interface method."""
+
+    @abstractmethod
+    def get_price(self) -> float:
+        """Interface method."""
+
+
+class Product(IProduct):
     """Класс для работы с продуктами"""
     __id: list['Product'] = []
     __name: str
@@ -36,18 +62,11 @@ class Product:
     __price: int | None = None
     __mediator: 'ProductAPI'
 
-    def __init__(self, mediator: 'ProductAPI', name: str, price: float, quantity: int = 0):
+    def __init__(self, name: str, price: float, quantity: int = 0):
         self.__class__.__id.append(self)
         self.set_name(name)
         self.set_quantity(quantity)
-        self.__mediator = mediator
         self.set_price(price)
-        mediator.add_product(self)
-
-    def __del__(self):
-        print(Product.__id)
-        self.__class__.__id.remove(self)
-        print(Product.__id)
 
     def __str__(self) -> str:
         return f"Product: '{self.get_name()}'"
@@ -75,11 +94,54 @@ class Product:
         return self.__price // 100
 
 
+class ProxyProduct(IProduct):
+    """Класс для работы с продуктами"""
+    product: Product
+
+    def __init__(self, mediator: 'ProductAPI', name: str, price: int | float, quantity: int = 0):
+        if not (isinstance(mediator, ProductAPI) and isinstance(name, str)
+                and isinstance(price, (int, float)) and isinstance(quantity, int)):
+            raise TypeError("Введенные данные не соответствуют требованиям по типу")
+
+        self.product = Product(name, price, quantity)
+        self.__mediator = mediator
+        mediator.add_product(self)
+
+    def __str__(self) -> str:
+        return f"ProxyProduct: '{self.product.get_name()}'"
+
+    def get_id(self) -> int:
+        return self.product.get_id()
+
+    def set_name(self, name: str) -> None:
+        if not isinstance(name, str):
+            raise ValueError("name должно быть str")
+        self.product.set_name(name)
+
+    def get_name(self) -> str:
+        return self.product.get_name()
+
+    def set_quantity(self, quantity: int) -> None:
+        if not isinstance(quantity, int):
+            self.product.set_quantity(quantity)
+
+    def get_quantity(self) -> int:
+        return self.product.get_quantity()
+
+    def set_price(self, price: int | float) -> None:
+        if not isinstance(price, (int, float)):
+            raise ValueError("price должен быть числом")
+        self.product.set_price(price)
+
+    def get_price(self) -> float:
+        return self.product.get_price()
+
+
 class Supplier:
     """Класс для работы с поставщиками"""
     __id: int = 0
     __name: str
-    __prices: dict[Product, int]
+    __prices: dict[ProxyProduct, int]
     __mediator: 'ProductAPI'
 
     def __init__(self, mediator: 'ProductAPI', name: str):
@@ -99,18 +161,18 @@ class Supplier:
     def get_name(self) -> str:
         return self.__name
 
-    def set_price(self, product: Product, price: float) -> None:
-        self.__prices[product] = int(price * 100)
+    def set_price(self, proxy_product: ProxyProduct, price: float) -> None:
+        self.__prices[proxy_product] = int(price * 100)
 
-    def get_price(self, product: Product) -> float:
-        return self.__prices[product] / 100
+    def get_price(self, proxy_product: ProxyProduct) -> float:
+        return self.__prices[proxy_product] / 100
 
 
 class Purchase:
     """Класс для работы с покупками"""
     __id: int = 0
     __number: int
-    __products_quantity: dict[Product, int]
+    __products_quantity: dict[ProxyProduct, int]
     __mediator: 'ProductAPI'
 
     def __init__(self, mediator: 'ProductAPI', number: int):
@@ -130,15 +192,15 @@ class Purchase:
     def get_number(self) -> int:
         return self.__number
 
-    def get_products_quantity(self) -> dict[Product, int]:
+    def get_products_quantity(self) -> dict[ProxyProduct, int]:
         return self.__products_quantity
 
-    def add_product(self, product: Product, quantity: int = 1) -> None:
+    def add_product(self, proxy_product: ProxyProduct, quantity: int = 1) -> None:
         for _ in range(quantity):
-            if product in self.__products_quantity:
-                self.__products_quantity[product] += 1
+            if proxy_product in self.__products_quantity:
+                self.__products_quantity[proxy_product] += 1
             else:
-                self.__products_quantity[product] = 1
+                self.__products_quantity[proxy_product] = 1
 
     def get_total(self) -> float:
         return sum(product.get_price() * quantity
@@ -149,7 +211,7 @@ class ProductAPI:
     """Медиатор для связывания продуктов, поставщиков и покупок"""
     __suppliers: list[Supplier]
     __purchases: list[Purchase]
-    __products: list[Product]
+    __products: list[ProxyProduct]
 
     def __init__(self):
         self.__products = []
@@ -162,20 +224,21 @@ class ProductAPI:
     def add_purchase(self, purchase: Purchase) -> None:
         self.__purchases.append(purchase)
 
-    def add_product(self, product: Product) -> None:
-        self.__products.append(product)
+    def add_product(self, proxy_product: ProxyProduct) -> None:
+        self.__products.append(proxy_product)
 
     def get_suppliers(self) -> tuple[Supplier]:
         return tuple(self.__suppliers)
 
-    def get_products(self) -> tuple[Product]:
+    def get_products(self) -> tuple[ProxyProduct]:
         return tuple(self.__products)
 
     def get_purchases(self) -> tuple[Purchase]:
         return tuple(self.__purchases)
 
-    def get_prices(self, product: Product) -> tuple[float, ...]:
-        return tuple(supplier.get_price(product) for supplier in self.__suppliers if supplier.get_price(product))
+    def get_prices(self, proxy_product: ProxyProduct) -> tuple[float, ...]:
+        return tuple(supplier.get_price(proxy_product)
+                     for supplier in self.__suppliers if supplier.get_price(proxy_product))
 
     def get_purchases_with_product(self, product: Product) -> tuple[Purchase, ...]:
         return tuple(purchase for purchase in self.get_purchases() if product in purchase.get_products_quantity())
@@ -261,18 +324,68 @@ class Employee:
         print(smt)
 
 
+class State(ABC):
+    """Abstract class-state"""
+
+    @staticmethod
+    @abstractmethod
+    def read(feedback: 'FeedBack'):
+        ...
+
+    @staticmethod
+    @abstractmethod
+    def is_read():
+        ...
+
+
+class Read(State):
+    """class-state Read"""
+
+    @staticmethod
+    def read(feedback: 'FeedBack'):
+        print(f"feedback '{feedback}' is already read")
+
+    @staticmethod
+    def is_read():
+        return True
+
+
+class Unread(State):
+    """class-state Unread"""
+
+    @staticmethod
+    def read(feedback: 'FeedBack'):
+        print(f"feedback '{feedback}' has been read")
+        feedback.set_state(Read)
+
+    @staticmethod
+    def is_read():
+        return False
+
+
 class FeedBack(ABC):
     """Абстрактный класс для работы с фидбеком"""
     date_and_time: datetime
     customer_name: str
     contact_details: str
     text: str
+    _state: Type[State]
 
     def __init__(self, text: str, customer_name: str, contact_details: str):
         self.date_and_time = datetime.now()
         self.customer_name = customer_name
         self.contact_details = contact_details
         self.text = text
+        self._state = Unread
+
+    def set_state(self, state: Type[State]):
+        self._state = state
+
+    def read(self):
+        self._state.read(self)
+
+    def is_read(self):
+        return self._state.is_read()
 
 
 class FeedbackToEmployee(FeedBack, ABC):
@@ -338,12 +451,12 @@ class FeedbackToEmployeeFactory(ABC):
 
     @abstractmethod
     def create_anonym_feedback(self, employee_name: str, text: str) -> FeedBack:
-        pass
+        """Абстрактный метод."""
 
     @abstractmethod
     def create_named_feedback(self, employee_name: str, text: str, customer_name: str,
                               contact_details: str) -> FeedBack:
-        pass
+        """Абстрактный метод."""
 
     @staticmethod
     def create_feedback(feedback_type: FeedbackType, *args) -> FeedBack:
