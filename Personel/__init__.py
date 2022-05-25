@@ -5,21 +5,40 @@ from enum import Enum
 
 
 def main():
-    m1 = ProductAPI()
-    charger = ProxyProduct(m1, "Charger", 10)
+    flyweight_factory = FlyweightFactory()
+    product_maker = ProductMaker(flyweight_factory)
+    mediator = ProductAPI()
 
-    samsung = Supplier(m1, "Samsung")
-    LG = Supplier(m1, "LG")
-    apple = Supplier(m1, "Apple")
-    xiaomi = Supplier(m1, "Xiaomi")
+    print(flyweight_factory.total)
+    print(product_maker.total, "\n")
 
-    for supplier, price in zip((samsung, LG, apple, xiaomi), (13.6, 11.9, 19.99, 3.99)):
-        supplier.set_price(charger, price)
+    headphones = product_maker.make_product(mediator, "headphones", 10, picture="pic1")
+    print(flyweight_factory.total)
+    print(product_maker.total, "\n")
 
-    print(m1.get_prices(charger))
+    tablet = product_maker.make_product(mediator, "tablet", 100, picture="pic1")
+    print(flyweight_factory.total)
+    print(product_maker.total, "\n")
 
-    m1.set_strategy(PricesWithSellersStrategy)
-    print(m1.get_prices(charger))
+    watch = product_maker.make_product(mediator, "watch", 50, picture="pic2")
+    print(flyweight_factory.total)
+    print(product_maker.total, "\n")
+
+    # m1 = ProductAPI()
+    # charger = ProxyProduct(m1, "Charger", 10)
+    #
+    # samsung = Supplier(m1, "Samsung")
+    # LG = Supplier(m1, "LG")
+    # apple = Supplier(m1, "Apple")
+    # xiaomi = Supplier(m1, "Xiaomi")
+    #
+    # for supplier, price in zip((samsung, LG, apple, xiaomi), (13.6, 11.9, 19.99, 3.99)):
+    #     supplier.set_price(charger, price)
+    #
+    # print(m1.get_prices(charger))
+    #
+    # m1.set_strategy(PricesWithSellersStrategy)
+    # print(m1.get_prices(charger))
 
     # maxim = Employee("Гольцов")
     # complaint = ComplaintFactory().create_anonym_feedback("Гольцов", "плохо работает")
@@ -64,31 +83,6 @@ class PricesOnlyStrategy(PricesShowingStrategy):
                      for supplier in mediator.get_suppliers() if supplier.get_price(proxy_product))
 
 
-# class SortingStrategy(ABC):
-#     """ Sorting strategy interface """
-#
-#     @staticmethod
-#     @abstractmethod
-#     def sort(sequence: Iterable) -> list:
-#         ...
-#
-#
-# class AscendingSorting(SortingStrategy):
-#     """ Ascending sorting strategy"""
-#
-#     @staticmethod
-#     def sort(sequence: Iterable) -> list:
-#         return sorted(sequence)
-#
-#
-# class DescengingSorting(SortingStrategy):
-#     """ Descending sorting strategy """
-#
-#     @staticmethod
-#     def sort(sequence: Iterable) -> list:
-#         return sorted(sequence, reverse=True)
-
-
 class IProduct(ABC):
     """Interface for proxy"""
 
@@ -128,12 +122,15 @@ class Product(IProduct):
     __quantity: int
     __price: int | None = None
     __mediator: 'ProductAPI'
+    _flyweight: 'ProductPictureFlyweight'
 
-    def __init__(self, name: str, price: float, quantity: int = 0):
+    def __init__(self, name: str, price: float, quantity: int,
+                 flyweight: 'ProductPictureFlyweight'):
         self.__class__.__id.append(self)
         self.set_name(name)
         self.set_quantity(quantity)
         self.set_price(price)
+        self._flyweight = flyweight
 
     def __str__(self) -> str:
         return f"Product: '{self.get_name()}'"
@@ -165,12 +162,14 @@ class ProxyProduct(IProduct):
     """Класс для работы с продуктами"""
     product: Product
 
-    def __init__(self, mediator: 'ProductAPI', name: str, price: int | float, quantity: int = 0):
+    def __init__(self, mediator: 'ProductAPI', name: str, price: int | float,
+                 quantity: int, flyweight: 'ProductPictureFlyweight'):
         if not (isinstance(mediator, ProductAPI) and isinstance(name, str)
-                and isinstance(price, (int, float)) and isinstance(quantity, int)):
+                and isinstance(price, (int, float)) and isinstance(quantity, int)
+                and isinstance(flyweight, ProductPictureFlyweight)):
             raise TypeError("Введенные данные не соответствуют требованиям по типу")
 
-        self.product = Product(name, price, quantity)
+        self.product = Product(name, price, quantity, flyweight)
         self.__mediator = mediator
         mediator.add_product(self)
 
@@ -202,6 +201,63 @@ class ProxyProduct(IProduct):
 
     def get_price(self) -> float:
         return self.product.get_price()
+
+
+class ProductPictureFlyweight:
+    """ Flyweight for pictures class """
+    picture: str
+
+    def __init__(self, picture: str):
+        self.picture = picture
+
+    def __repr__(self) -> str:
+        return str(self.picture)
+
+
+class FlyweightFactory:
+    """ Flyweight factory class"""
+    _flyweights: list[ProductPictureFlyweight]
+
+    def __init__(self):
+        self._flyweights = []
+
+    def get_flyweight(self, picture: str) -> ProductPictureFlyweight:
+        filtered_flyweights: list = list(filter(lambda x: x.picture == picture,
+                                                self._flyweights))
+
+        if filtered_flyweights:
+            return filtered_flyweights[0]
+        else:
+            flyweight = ProductPictureFlyweight(picture)
+            self._flyweights.append(flyweight)
+            return flyweight
+
+    @property
+    def total(self):
+        return len(self._flyweights)
+
+
+class ProductMaker:
+    """ Product factory class """
+    _flyweight_factory: FlyweightFactory
+    _products: list[IProduct]
+
+    def __init__(self, flyweight_factory: FlyweightFactory):
+        self._flyweight_factory = flyweight_factory
+        self._products = []
+
+    def make_product(self, mediator: 'ProductAPI', name: str, price: int | float,
+                     quantity: int = 0, picture: str = "default_picture",
+                     flyweight_factory: FlyweightFactory = None) -> IProduct:
+        flyweight = self._flyweight_factory.get_flyweight(picture)
+        product = ProxyProduct(mediator, name, price, quantity, flyweight)
+        self._products.append(product)
+
+        return product
+
+    @property
+    def total(self):
+        return len(self._products)
 
 
 class Supplier:
@@ -327,7 +383,8 @@ class Employee:
     __achievements: list[str]
     __employees: list = []
 
-    def __init__(self, name: str, contact_number: str = "some_number", email: str = "some_email"):
+    def __init__(self, name: str, contact_number: str = "some_number",
+                 email: str = "some_email"):
         Employee.__id += 1
         Employee.__employees.append(self)
         self.__id = Employee.__id
@@ -464,7 +521,8 @@ class FeedbackToEmployee(FeedBack, ABC):
     employee_name: str  # Надо ли это хранить (думаю, что нет)
     employee: Employee
 
-    def __init__(self, employee_name: str, text: str, customer_name: str, contact_details: str):
+    def __init__(self, employee_name: str, text: str,
+                 customer_name: str, contact_details: str):
         super().__init__(text, customer_name, contact_details)
         self.employee_name = employee_name
         self.employee = Employee.get_employee_by_name(employee_name)
@@ -581,7 +639,8 @@ class DataBase(metaclass=MetaSingleton):
     password: str
     port: int
 
-    def __init__(self, user: str = "default_user", password: str = "default_password", port: int = "default_port"):
+    def __init__(self, user: str = "default_user", password: str = "default_password",
+                 port: int = "default_port"):
         self.user = user
         self.password = password
         self.port = port
