@@ -9,23 +9,27 @@ def main():
     product_maker = ProductMaker(flyweight_factory)
     mediator = ProductAPI()
 
-    print(flyweight_factory.total)
-    print(product_maker.total, "\n")
+    print(f"Создано легковесов: {flyweight_factory.total}")
+    print(f"Создано товаров: {product_maker.total}, \n")
 
     headphones = product_maker.make_product(mediator, "headphones", 10, picture="pic1")
-    print(flyweight_factory.total)
-    print(product_maker.total, "\n")
+    print(f"Создано легковесов: {flyweight_factory.total}")
+    print(f"Создано товаров: {product_maker.total}, \n")
 
     tablet = product_maker.make_product(mediator, "tablet", 100, picture="pic1")
-    print(flyweight_factory.total)
-    print(product_maker.total, "\n")
+    print(f"Создано легковесов: {flyweight_factory.total}")
+    print(f"Создано товаров: {product_maker.total}, \n")
 
     watch = product_maker.make_product(mediator, "watch", 50, picture="pic2")
-    print(flyweight_factory.total)
-    print(product_maker.total, "\n")
+    print(f"Создано легковесов: {flyweight_factory.total}")
+    print(f"Создано товаров: {product_maker.total}, \n")
+
 
     # m1 = ProductAPI()
-    # charger = ProxyProduct(m1, "Charger", 10)
+    # flyweight_factory = FlyweightFactory()
+    # product_maker = ProductMaker(flyweight_factory)
+    #
+    # charger = product_maker.make_product(m1, "Charger", 10)
     #
     # samsung = Supplier(m1, "Samsung")
     # LG = Supplier(m1, "LG")
@@ -40,13 +44,10 @@ def main():
     # m1.set_strategy(PricesWithSellersStrategy)
     # print(m1.get_prices(charger))
 
-    # maxim = Employee("Гольцов")
-    # complaint = ComplaintFactory().create_anonym_feedback("Гольцов", "плохо работает")
-    #
-    # print(complaint.is_read())
-    # complaint.read()
-    # print(complaint.is_read())
-    # complaint.read()
+
+
+
+
 
 
 class FeedbackType(Enum):
@@ -247,8 +248,7 @@ class ProductMaker:
         self._products = []
 
     def make_product(self, mediator: 'ProductAPI', name: str, price: int | float,
-                     quantity: int = 0, picture: str = "default_picture",
-                     flyweight_factory: FlyweightFactory = None) -> IProduct:
+                     quantity: int = 0, picture: str = "default_picture") -> IProduct:
         flyweight = self._flyweight_factory.get_flyweight(picture)
         product = ProxyProduct(mediator, name, price, quantity, flyweight)
         self._products.append(product)
@@ -264,7 +264,7 @@ class Supplier:
     """Класс для работы с поставщиками"""
     __id: int = 0
     __name: str
-    __prices: dict[ProxyProduct, int]
+    __prices: dict[IProduct, int]
     __mediator: 'ProductAPI'
 
     def __init__(self, mediator: 'ProductAPI', name: str):
@@ -284,7 +284,7 @@ class Supplier:
     def get_name(self) -> str:
         return self.__name
 
-    def set_price(self, proxy_product: ProxyProduct, price: float) -> None:
+    def set_price(self, proxy_product: IProduct, price: float) -> None:
         self.__prices[proxy_product] = int(price * 100)
 
     def get_price(self, proxy_product: ProxyProduct) -> float:
@@ -363,7 +363,7 @@ class ProductAPI:
     def set_strategy(self, strategy: Type[PricesShowingStrategy]):
         self._strategy = strategy
 
-    def get_prices(self, proxy_product: ProxyProduct) -> tuple[str, ...]:
+    def get_prices(self, proxy_product: IProduct) -> tuple[str, ...]:
         return self._strategy.get_prices(self, proxy_product)
 
     def get_purchases_with_product(self, product: Product) -> tuple[Purchase, ...]:
