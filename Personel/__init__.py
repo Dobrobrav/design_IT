@@ -1,5 +1,5 @@
-from typing import Any, Type, Iterable
-from abc import ABC, abstractmethod, abstractclassmethod
+from typing import Any, Type
+from abc import ABC, abstractmethod
 from datetime import datetime
 from enum import Enum
 
@@ -24,7 +24,6 @@ def main():
     print(f"Создано легковесов: {flyweight_factory.total}")
     print(f"Создано товаров: {product_maker.total}, \n")
 
-
     # m1 = ProductAPI()
     # flyweight_factory = FlyweightFactory()
     # product_maker = ProductMaker(flyweight_factory)
@@ -45,11 +44,6 @@ def main():
     # print(m1.get_prices(charger))
 
 
-
-
-
-
-
 class FeedbackType(Enum):
     complaint = 1
     gratitude = 2
@@ -62,7 +56,8 @@ class PricesShowingStrategy(ABC):
 
     @staticmethod
     @abstractmethod
-    def get_prices(mediator: 'ProductAPI', proxy_product: 'ProxyProduct') -> tuple[str, ...]:
+    def get_prices(mediator: 'ProductAPI',
+                   proxy_product: 'IProduct') -> tuple[str, ...]:
         ...
 
 
@@ -70,18 +65,22 @@ class PricesWithSellersStrategy(PricesShowingStrategy):
     """ class of showing prices with the sellers strategy """
 
     @staticmethod
-    def get_prices(mediator: 'ProductAPI', proxy_product: 'ProxyProduct') -> tuple[str, ...]:
+    def get_prices(mediator: 'ProductAPI',
+                   proxy_product: 'ProxyProduct') -> tuple[str, ...]:
         return tuple(f"{supplier.get_name()}: {supplier.get_price(proxy_product)}$"
-                     for supplier in mediator.get_suppliers() if supplier.get_price(proxy_product))
+                     for supplier in mediator.get_suppliers()
+                     if supplier.get_price(proxy_product))
 
 
 class PricesOnlyStrategy(PricesShowingStrategy):
     """ class of only showing prices strategy """
 
     @staticmethod
-    def get_prices(mediator: 'ProductAPI', proxy_product: 'ProxyProduct') -> tuple[str, ...]:
+    def get_prices(mediator: 'ProductAPI',
+                   proxy_product: 'ProxyProduct') -> tuple[str, ...]:
         return tuple(f"{supplier.get_price(proxy_product)}$"
-                     for supplier in mediator.get_suppliers() if supplier.get_price(proxy_product))
+                     for supplier in mediator.get_suppliers()
+                     if supplier.get_price(proxy_product))
 
 
 class IProduct(ABC):
@@ -248,7 +247,8 @@ class ProductMaker:
         self._products = []
 
     def make_product(self, mediator: 'ProductAPI', name: str, price: int | float,
-                     quantity: int = 0, picture: str = "default_picture") -> IProduct:
+                     quantity: int = 0,
+                     picture: str = "default_picture") -> IProduct:
         flyweight = self._flyweight_factory.get_flyweight(picture)
         product = ProxyProduct(mediator, name, price, quantity, flyweight)
         self._products.append(product)
@@ -318,7 +318,8 @@ class Purchase:
     def get_products_quantity(self) -> dict[ProxyProduct, int]:
         return self.__products_quantity
 
-    def add_product(self, proxy_product: ProxyProduct, quantity: int = 1) -> None:
+    def add_product(self, proxy_product: ProxyProduct,
+                    quantity: int = 1) -> None:
         for _ in range(quantity):
             if proxy_product in self.__products_quantity:
                 self.__products_quantity[proxy_product] += 1
@@ -366,8 +367,10 @@ class ProductAPI:
     def get_prices(self, proxy_product: IProduct) -> tuple[str, ...]:
         return self._strategy.get_prices(self, proxy_product)
 
-    def get_purchases_with_product(self, product: Product) -> tuple[Purchase, ...]:
-        return tuple(purchase for purchase in self.get_purchases() if product in purchase.get_products_quantity())
+    def get_purchases_with_product(self,
+                                   product: Product) -> tuple[Purchase, ...]:
+        return tuple(purchase for purchase in self.get_purchases()
+                     if product in purchase.get_products_quantity())
 
 
 class Employee:
@@ -533,7 +536,8 @@ class FeedbackToEmployee(FeedBack, ABC):
 class Gratitude(FeedbackToEmployee):
     """Класс для работы с благодарностями от посетителей."""
 
-    def __init__(self, employee_name: str, text: str, customer_name: str, contact_details: str):
+    def __init__(self, employee_name: str, text: str,
+                 customer_name: str, contact_details: str):
         super().__init__(employee_name, text, customer_name, contact_details)
         self.set_employee_name(employee_name)
 
@@ -547,7 +551,8 @@ class Gratitude(FeedbackToEmployee):
 class Complaint(FeedbackToEmployee):
     """Класс для работы с благодарностями от посетителей."""
 
-    def __init__(self, employee_name: str, text: str, customer_name: str, contact_details: str = "some_contact"):
+    def __init__(self, employee_name: str, text: str,
+                 customer_name: str, contact_details: str = "some_contact"):
         super().__init__(employee_name, text, customer_name, contact_details)
         self.set_employee_name(employee_name)
 
@@ -582,7 +587,8 @@ class FeedbackToEmployeeFactory(ABC):
         """Абстрактный метод."""
 
     @abstractmethod
-    def create_named_feedback(self, employee_name: str, text: str, customer_name: str,
+    def create_named_feedback(self, employee_name: str, text: str,
+                              customer_name: str,
                               contact_details: str) -> FeedBack:
         """Абстрактный метод."""
 
@@ -603,22 +609,30 @@ class GratitudeFactory(FeedbackToEmployeeFactory):
     """Фабрика отзывов и предложений"""
 
     def create_anonym_feedback(self, employee_name: str, text: str) -> FeedBack:
-        return self.create_feedback(FeedbackType.gratitude, employee_name, text, "Anonym", "Anonym")
+        return self.create_feedback(
+            FeedbackType.gratitude, employee_name, text, "Anonym", "Anonym"
+        )
 
-    def create_named_feedback(self, employee_name: str, text: str, customer_name: str,
+    def create_named_feedback(self, employee_name: str, text: str,
+                              customer_name: str,
                               contact_details: str) -> FeedBack:
-        return self.create_feedback(FeedbackType.gratitude, employee_name, text, customer_name, contact_details)
+        return self.create_feedback(FeedbackType.gratitude, employee_name,
+                                    text, customer_name, contact_details)
 
 
 class ComplaintFactory(FeedbackToEmployeeFactory):
     """Фабрика жалоб и благодарностей"""
 
     def create_anonym_feedback(self, employee_name: str, text: str) -> FeedBack:
-        return self.create_feedback(FeedbackType.complaint, employee_name, text, "Anonym", "Anonym")
+        return self.create_feedback(
+            FeedbackType.complaint, employee_name, text, "Anonym", "Anonym"
+        )
 
-    def create_named_feedback(self, employee_name: str, text: str, customer_name: str,
+    def create_named_feedback(self, employee_name: str, text: str,
+                              customer_name: str,
                               contact_details: str) -> FeedBack:
-        return self.create_feedback(FeedbackType.complaint, employee_name, text, customer_name, contact_details)
+        return self.create_feedback(FeedbackType.complaint, employee_name,
+                                    text, customer_name, contact_details)
 
 
 class MetaSingleton(type):
@@ -639,8 +653,8 @@ class DataBase(metaclass=MetaSingleton):
     password: str
     port: int
 
-    def __init__(self, user: str = "default_user", password: str = "default_password",
-                 port: int = "default_port"):
+    def __init__(self, user: str = "default_user",
+                 password: str = "default_password", port: int = "default_port"):
         self.user = user
         self.password = password
         self.port = port
